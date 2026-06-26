@@ -1,0 +1,1093 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloons TD 6 Save Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #1a1208;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding: 24px 16px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: #d4c5a0;
+        }
+
+        .bloons-tools-container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(145deg, rgba(42, 26, 10, 0.6), rgba(74, 46, 18, 0.3));
+            border-radius: 24px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .tools-header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.1);
+        }
+
+            .tools-header h2 {
+                font-size: 28px;
+                font-weight: 700;
+                background: linear-gradient(135deg, #ffd700, #ff8c00);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 4px;
+            }
+
+        .file-operations {
+            background: linear-gradient(145deg, rgba(42, 26, 10, 0.6), rgba(74, 46, 18, 0.4));
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 215, 0, 0.06);
+        }
+
+        .operation-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #fff;
+            background: #2a1a0a;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+            .btn .btn-icon {
+                font-size: 18px;
+            }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1208;
+        }
+
+            .btn-upload:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3);
+            }
+
+        .btn-download {
+            background: linear-gradient(135deg, #ff6b35, #ff4500);
+            color: #fff;
+        }
+
+            .btn-download:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px rgba(255, 69, 0, 0.3);
+            }
+
+            .btn-download:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.08);
+            color: #b8955a;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+            .btn-reset:hover:not(:disabled) {
+                background: rgba(255, 215, 0, 0.1);
+                border-color: rgba(255, 215, 0, 0.2);
+                transform: translateY(-2px);
+            }
+
+            .btn-reset:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+            }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.08);
+            flex: 1;
+            min-width: 200px;
+            margin-top: 12px;
+        }
+
+        .file-icon {
+            font-size: 20px;
+        }
+
+        .file-name {
+            flex: 1;
+            color: #d4a85a;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .file-status.success {
+            background: rgba(0, 255, 0, 0.1);
+            color: #4caf50;
+            border: 1px solid rgba(0, 255, 0, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .quick-actions-menu {
+            margin-bottom: 24px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: linear-gradient(145deg, rgba(42, 26, 10, 0.8), rgba(74, 46, 18, 0.6));
+            border: 2px solid rgba(255, 215, 0, 0.08);
+            border-radius: 16px;
+            color: #d4a85a;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+            width: 100%;
+            min-height: 64px;
+        }
+
+            .menu-item::before {
+                content: '';
+                position: absolute;
+                inset: -2px;
+                border-radius: 18px;
+                padding: 2px;
+                background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.05));
+                -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                -webkit-mask-composite: xor;
+                mask-composite: exclude;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .menu-item:hover {
+                transform: translateY(-2px) scale(1.02);
+                border-color: rgba(255, 215, 0, 0.2);
+                box-shadow: 0 8px 30px rgba(255, 215, 0, 0.1);
+                background: linear-gradient(145deg, rgba(255, 215, 0, 0.12), rgba(74, 46, 18, 0.8));
+            }
+
+                .menu-item:hover::before {
+                    opacity: 1;
+                }
+
+            .menu-item:active {
+                transform: scale(0.97);
+            }
+
+        .menu-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover .menu-icon {
+            transform: scale(1.2) rotate(-8deg);
+        }
+
+        .menu-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .menu-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #d4a85a;
+            transition: color 0.3s ease;
+        }
+
+        .menu-item:hover .menu-title {
+            color: #ffd700;
+        }
+
+        .menu-desc {
+            font-size: 11px;
+            color: #8a6a3a;
+            transition: color 0.3s ease;
+        }
+
+        .menu-item:hover .menu-desc {
+            color: #b8955a;
+        }
+
+        .menu-badge {
+            font-size: 14px;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .menu-item:hover .menu-badge {
+            opacity: 1;
+            transform: scale(1.3) rotate(180deg);
+        }
+
+        .menu-item.caution-item {
+            background: linear-gradient(145deg, rgba(255, 23, 68, 0.2), rgba(180, 0, 30, 0.3));
+            border-color: rgba(255, 23, 68, 0.3);
+            animation: border-pulse-red 2s ease-in-out infinite;
+        }
+
+            .menu-item.caution-item .menu-title {
+                color: #ff8a80;
+            }
+
+            .menu-item.caution-item:hover .menu-title {
+                color: #ff1744;
+            }
+
+            .menu-item.caution-item .menu-desc {
+                color: #ff6b6b;
+            }
+
+            .menu-item.caution-item:hover .menu-desc {
+                color: #ff1744;
+            }
+
+            .menu-item.caution-item .menu-badge.caution-red {
+                font-size: 16px;
+                opacity: 1;
+                color: #ff1744;
+                animation: pulse-red 1.5s infinite;
+            }
+
+            .menu-item.caution-item:hover .menu-badge.caution-red {
+                transform: scale(1.4) rotate(-15deg);
+            }
+
+            .menu-item.caution-item .menu-icon {
+                filter: drop-shadow(0 0 8px rgba(255, 23, 68, 0.3));
+            }
+
+            .menu-item.caution-item:hover .menu-icon {
+                filter: drop-shadow(0 0 20px rgba(255, 23, 68, 0.5));
+                transform: scale(1.2) rotate(-8deg);
+            }
+
+        @keyframes border-pulse-red {
+            0%,100% {
+                border-color: rgba(255,23,68,0.3);
+                box-shadow: 0 0 20px rgba(255,23,68,0.05);
+            }
+
+            50% {
+                border-color: rgba(255,23,68,0.6);
+                box-shadow: 0 0 30px rgba(255,23,68,0.15);
+            }
+        }
+
+        @keyframes pulse-red {
+            0%,100% {
+                transform: scale(1);
+                opacity: 0.9;
+                text-shadow: 0 0 10px rgba(255,23,68,0.3);
+            }
+
+            50% {
+                transform: scale(1.3);
+                opacity: 1;
+                text-shadow: 0 0 30px rgba(255,23,68,0.7);
+            }
+        }
+
+        .json-editor {
+            background: linear-gradient(145deg, rgba(42, 26, 10, 0.8), rgba(74, 46, 18, 0.6));
+            border-radius: 16px;
+            border: 1px solid rgba(255, 215, 0, 0.06);
+            overflow: hidden;
+            margin-bottom: 24px;
+          
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.06);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+            .editor-header h4 {
+                color: #d4a85a;
+                font-size: 16px;
+                font-weight: 600;
+                margin: 0;
+            }
+
+        .editor-body {
+            padding: 16px 20px;
+        }
+
+        .json-textarea {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 215, 0, 0.08);
+            border-radius: 12px;
+            color: #d4c5a0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+            .json-textarea:focus {
+                outline: none;
+                border-color: rgba(255, 215, 0, 0.3);
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.05);
+            }
+
+        .editor-status {
+            margin-top: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .status-idle {
+            color: #8a6a3a;
+            font-size: 13px;
+        }
+
+        .status-success {
+            color: #4caf50;
+            font-size: 13px;
+        }
+
+        .status-error {
+            color: #ff6b35;
+            font-size: 13px;
+        }
+
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-error {
+            background: rgba(255, 69, 0, 0.1);
+            border: 1px solid rgba(255, 69, 0, 0.2);
+            color: #ff6b35;
+        }
+
+        .alert-success-custom {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+
+        .alert-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            padding: 4px;
+        }
+
+            .alert-close:hover {
+                opacity: 1;
+            }
+
+        @media (max-width: 768px) {
+            .bloons-tools-container {
+                padding: 16px;
+            }
+
+            .menu-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .tools-header h2 {
+                font-size: 22px;
+            }
+
+            .operation-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .file-info {
+                width: 100%;
+            }
+
+            .editor-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .menu-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .json-textarea {
+                font-size: 11px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bloons-tools-container" id="app">
+        <div class="tools-header">
+            <h2>🛠️ Bloons TD 6 Save Editor</h2>
+        </div>
+
+        <div class="file-operations">
+            <div class="operation-group">
+                <label class="btn btn-upload">
+                    <span class="btn-icon">📤</span>
+                    Upload Save File
+                    <input type="file" id="fileInput" style="display:none" accept="*">
+                </label>
+                <button class="btn btn-download" id="downloadBtn" disabled>📥 Download File</button>
+                <button class="btn btn-reset" id="resetBtn" disabled>🔄 Reset</button>
+            </div>
+            <div id="fileInfo" class="file-info" style="display:none;">
+                <span class="file-icon">📄</span>
+                <span class="file-name" id="fileNameDisplay">file.save</span>
+                <span class="file-status success">✓ Loaded</span>
+            </div>
+        </div>
+
+        <div class="quick-actions-menu">
+            <div class="menu-grid">
+                <button class="menu-item" data-action="unlockTowers" disabled><span class="menu-icon">🏗️</span><div class="menu-content"><span class="menu-title">Unlock Towers</span><span class="menu-desc">All towers unlocked</span></div><span class="menu-badge">⚡</span></button>
+                <button class="menu-item" data-action="unlockXP" disabled><span class="menu-icon">⭐</span><div class="menu-content"><span class="menu-title">Unlock XP</span><span class="menu-desc">Max tower experience</span></div><span class="menu-badge">🔥</span></button>
+                <button class="menu-item" data-action="maxLevel" disabled><span class="menu-icon">⬆️</span><div class="menu-content"><span class="menu-title">Max Level</span><span class="menu-desc">Reach maximum level</span></div><span class="menu-badge">💎</span></button>
+                <button class="menu-item" data-action="unlockHero" disabled><span class="menu-icon">🦸</span><div class="menu-content"><span class="menu-title">Unlock Heroes</span><span class="menu-desc">All heroes available</span></div><span class="menu-badge">🌟</span></button>
+                <button class="menu-item caution-item" data-action="maxMoney" disabled><span class="menu-icon">💰</span><div class="menu-content"><span class="menu-title">Max Money</span><span class="menu-desc">Unlimited monkey money</span></div><span class="menu-badge caution-red">⚠️</span><span class="menu-badge">💲</span></button>
+                <button class="menu-item" data-action="doubleCash" disabled><span class="menu-icon">💵</span><div class="menu-content"><span class="menu-title">Unlock Double Cash</span><span class="menu-desc">Double Cash</span></div><span class="menu-badge">🎯</span></button>
+                <button class="menu-item" data-action="unlockKnowledge" disabled><span class="menu-icon">🧠</span><div class="menu-content"><span class="menu-title">Unlock Knowledge</span><span class="menu-desc">Max all knowledge</span></div><span class="menu-badge">📚</span></button>
+                <button class="menu-item" data-action="unlockSkin" disabled><span class="menu-icon">🎨</span><div class="menu-content"><span class="menu-title">Unlock Skin</span><span class="menu-desc">All heroes skins</span></div><span class="menu-badge">✨</span></button>
+                <button class="menu-item" data-action="completeMaps" disabled><span class="menu-icon">🗺️</span><div class="menu-content"><span class="menu-title">Complete Maps</span><span class="menu-desc">Complete all maps progress</span></div><span class="menu-badge">🌍</span></button>
+                <button class="menu-item caution-item" data-action="maxVeteran" disabled><span class="menu-icon">👑</span><div class="menu-content"><span class="menu-title">Max Veteran Level</span><span class="menu-desc">Reach 1Million level</span></div><span class="menu-badge caution-red">⚠️</span><span class="menu-badge">🚀</span></button>
+            </div>
+        </div>
+
+        <div id="errorAlert" class="alert alert-error" style="display:none;">
+            <span class="alert-icon">⚠️</span>
+            <div class="alert-content" id="errorMessage"></div>
+            <button class="alert-close" id="closeError">✕</button>
+        </div>
+        <div id="successAlert" class="alert alert-success-custom" style="display:none;">
+            <span class="alert-icon">✅</span>
+            <div class="alert-content" id="successMessage"></div>
+            <button class="alert-close" id="closeSuccess">✕</button>
+        </div>
+
+        <div id="jsonEditor" class="json-editor">
+            <div class="editor-header">
+                <h4>📝 Edit JSON</h4>
+            </div>
+            <div class="editor-body">
+                <textarea id="jsonTextarea" class="json-textarea" rows="20" spellcheck="false"></textarea>
+                <div class="editor-status">
+                    <span id="validationStatus" class="status-idle">💡 Edit the JSON above to modify your save file</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const MAGIC = 1;
+            const HEADER_SIZE = 0x24;
+            const SALT_SIZE = 0x18;
+            const ITERATIONS = 0xa;
+            const PASSWORD = "11";
+            const PASSWORD_VERSION_CONST = 0x2;
+            const BLOCK_SIZE = 128;
+
+            let fileLoaded = false;
+            let fileName = '';
+            let decryptedData = new Uint8Array(0);
+            let originalEncryptedData = new Uint8Array(0);
+            let fileGuid = null;
+            let creationTime = 0;
+            let lastWriteTime = 0;
+            let salt = new Uint8Array(0);
+            let modifiedContent = '';
+
+            const fileInput = document.getElementById('fileInput');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const jsonEditor = document.getElementById('jsonEditor');
+            const jsonTextarea = document.getElementById('jsonTextarea');
+            const validationStatus = document.getElementById('validationStatus');
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
+            const successAlert = document.getElementById('successAlert');
+            const successMessage = document.getElementById('successMessage');
+            const closeError = document.getElementById('closeError');
+            const closeSuccess = document.getElementById('closeSuccess');
+            const menuItems = document.querySelectorAll('.menu-item');
+
+            function showError(msg) {
+                errorMessage.textContent = msg;
+                errorAlert.style.display = 'flex';
+                successAlert.style.display = 'none';
+            }
+            function showSuccess(msg) {
+                successMessage.textContent = msg;
+                successAlert.style.display = 'flex';
+                errorAlert.style.display = 'none';
+            }
+            function hideAlerts() {
+                errorAlert.style.display = 'none';
+                successAlert.style.display = 'none';
+            }
+            function setValidation(text, isError) {
+                validationStatus.textContent = text;
+                validationStatus.className = isError ? 'status-error' : 'status-success';
+            }
+
+            function adler32(data) {
+                let a = 1, b = 0;
+                for (let i = 0; i < data.length; i++) {
+                    a = (a + data[i]) % 65521;
+                    b = (b + a) % 65521;
+                }
+                return (b << 16) | a;
+            }
+
+            function compressZlib(data) {
+                const compressed = pako.deflateRaw(data, { level: 6 });
+                const result = new Uint8Array(compressed.length + 6);
+                result[0] = 0x78;
+                result[1] = 0x9C;
+                result.set(compressed, 2);
+                const adler = adler32(data);
+                result[compressed.length + 2] = (adler >> 24) & 0xff;
+                result[compressed.length + 3] = (adler >> 16) & 0xff;
+                result[compressed.length + 4] = (adler >> 8) & 0xff;
+                result[compressed.length + 5] = adler & 0xff;
+                return result;
+            }
+
+            function decompressZlib(zlibData) {
+                if (zlibData.length < 6) throw new Error('Invalid Zlib data');
+                const deflateData = zlibData.slice(2, zlibData.length - 4);
+                try {
+                    const result = pako.inflateRaw(deflateData);
+                    return result;
+                } catch (e) {
+                    throw new Error('Zlib decompression failed');
+                }
+            }
+
+            async function deriveKeyAndIV(saltBytes, password, iterations) {
+                const encoder = new TextEncoder();
+                const keyMaterial = await window.crypto.subtle.importKey(
+                    'raw',
+                    encoder.encode(password),
+                    { name: 'PBKDF2' },
+                    false,
+                    ['deriveBits']
+                );
+                const bits = await window.crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: saltBytes,
+                        iterations: iterations,
+                        hash: 'SHA-1'
+                    },
+                    keyMaterial,
+                    256
+                );
+                const bytes = new Uint8Array(bits);
+                const iv = bytes.slice(0, 16);
+                const key = bytes.slice(16, 32);
+                return { iv, key };
+            }
+
+            async function aesDecrypt(encrypted, key, iv) {
+                const cryptoKey = await window.crypto.subtle.importKey(
+                    'raw',
+                    key,
+                    { name: 'AES-CBC', length: 128 },
+                    false,
+                    ['decrypt']
+                );
+                const decrypted = await window.crypto.subtle.decrypt(
+                    { name: 'AES-CBC', iv: iv },
+                    cryptoKey,
+                    encrypted
+                );
+                return new Uint8Array(decrypted);
+            }
+
+            async function aesEncrypt(plain, key, iv) {
+                const cryptoKey = await window.crypto.subtle.importKey(
+                    'raw',
+                    key,
+                    { name: 'AES-CBC', length: 128 },
+                    false,
+                    ['encrypt']
+                );
+                const encrypted = await window.crypto.subtle.encrypt(
+                    { name: 'AES-CBC', iv: iv },
+                    cryptoKey,
+                    plain
+                );
+                return new Uint8Array(encrypted);
+            }
+
+            async function decryptFileWithHeader(encryptedData) {
+                const view = new DataView(encryptedData.buffer, encryptedData.byteOffset, encryptedData.byteLength);
+                let offset = 0;
+                const magic = view.getUint32(offset, true); offset += 4;
+                if (magic !== MAGIC) throw new Error('Invalid magic number');
+                const headerSize = view.getInt32(offset, true); offset += 4;
+                if (headerSize !== HEADER_SIZE) throw new Error(`Invalid header size. Expected: ${HEADER_SIZE}, Got: ${headerSize}`);
+                const saveIndex = view.getInt32(offset, true); offset += 4;
+                const guid = new Uint8Array(encryptedData.buffer, encryptedData.byteOffset + offset, 16); offset += 16;
+                const creationBin = view.getBigInt64(offset, true); offset += 8;
+                const lastWriteBin = view.getBigInt64(offset, true); offset += 8;
+                const passwordVersion = view.getBigUint64(offset, true); offset += 8;
+                const saltBytes = new Uint8Array(encryptedData.buffer, encryptedData.byteOffset + offset, SALT_SIZE); offset += SALT_SIZE;
+
+                const encryptedPayload = new Uint8Array(encryptedData.buffer, encryptedData.byteOffset + offset, encryptedData.byteLength - offset);
+
+                const { iv, key } = await deriveKeyAndIV(saltBytes, PASSWORD, ITERATIONS);
+
+                let decrypted;
+                try {
+                    decrypted = await aesDecrypt(encryptedPayload, key, iv);
+                } catch (e) {
+                    throw new Error('AES decryption failed');
+                }
+
+                let decompressed;
+                try {
+                    decompressed = decompressZlib(decrypted);
+                } catch (e) {
+                    throw new Error('Decompression failed');
+                }
+
+                return {
+                    data: decompressed,
+                    guid: guid,
+                    creationTime: creationBin,
+                    lastWriteTime: lastWriteBin,
+                    passwordVersion: passwordVersion,
+                    salt: saltBytes
+                };
+            }
+
+            async function encryptFile(data, guid, creationTime, lastWriteTime, saltBytes) {
+                const compressed = compressZlib(data);
+                const { iv, key } = await deriveKeyAndIV(saltBytes, PASSWORD, ITERATIONS);
+                const encrypted = await aesEncrypt(compressed, key, iv);
+
+                const totalLen = 4 + 4 + 4 + 16 + 8 + 8 + 8 + SALT_SIZE + encrypted.length;
+                const result = new Uint8Array(totalLen);
+                const dv = new DataView(result.buffer);
+                let offset = 0;
+                dv.setUint32(offset, MAGIC, true); offset += 4;
+                dv.setInt32(offset, HEADER_SIZE, true); offset += 4;
+                dv.setInt32(offset, 0x44, true); offset += 4;
+                result.set(guid, offset); offset += 16;
+                dv.setBigInt64(offset, BigInt(creationTime), true); offset += 8;
+                dv.setBigInt64(offset, BigInt(lastWriteTime), true); offset += 8;
+                dv.setBigUint64(offset, BigInt(PASSWORD_VERSION_CONST), true); offset += 8;
+                result.set(saltBytes, offset); offset += SALT_SIZE;
+                result.set(encrypted, offset);
+                return result;
+            }
+
+            function applyEdit(callback) {
+                try {
+                    const trimmed = modifiedContent.trim();
+                    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                        showError('Content is not valid JSON (must start with { or [)');
+                        return false;
+                    }
+                    let jsonObj = JSON.parse(trimmed);
+                    callback(jsonObj);
+                    modifiedContent = JSON.stringify(jsonObj, null, 2);
+                    jsonTextarea.value = modifiedContent;
+                    setValidation('Valid JSON', false);
+                    hideAlerts();
+                    showSuccess('Edit applied successfully!');
+                    return true;
+                } catch (e) {
+                    showError('JSON error: ' + e.message);
+                    return false;
+                }
+            }
+
+            function unlockTowers() {
+                const towers = ["DartMonkey", "IceMonkey", "BombShooter", "TackShooter", "BoomerangMonkey", "GlueGunner", "SniperMonkey", "MonkeyAce", "MonkeyBuccaneer", "HeliPilot", "MonkeySub", "MortarMonkey", "WizardMonkey", "NinjaMonkey", "Alchemist", "SuperMonkey", "Druid", "BananaFarm", "MonkeyVillage", "SpikeFactory", "EngineerMonkey"];
+                applyEdit((obj) => {
+                    obj.unlockedTowers = towers;
+                    if (!obj.towerUnlockProgresses) obj.towerUnlockProgresses = {};
+                    obj.towerUnlockProgresses.Desperado = 3500000.0;
+                    obj.towerUnlockProgresses.DartlingGunner = 3000000.0;
+                    obj.towerUnlockProgresses.Mermonkey = 3000000.0;
+                    obj.towerUnlockProgresses.BeastHandler = 3000000.0;
+                });
+            }
+
+            function unlockXP() {
+                const xpMap = {
+                    "SniperMonkey": 9999999.0, "MonkeySub": 9999999.0, "MonkeyBuccaneer": 9999999.0, "MonkeyAce": 9999999.0,
+                    "HeliPilot": 9999999.0, "MortarMonkey": 9999999.0, "DartlingGunner": 9999999.0, "DartMonkey": 9999999.0,
+                    "BoomerangMonkey": 9999999.0, "BombShooter": 9999999.0, "TackShooter": 9999999.0, "IceMonkey": 9999999.0,
+                    "GlueGunner": 9999999.0, "WizardMonkey": 9999999.0, "NinjaMonkey": 9999999.0, "Alchemist": 9999999.0,
+                    "Druid": 9999999.0, "BananaFarm": 9999999.0, "SpikeFactory": 9999999.0, "MonkeyVillage": 9999999.0,
+                    "EngineerMonkey": 9999999.0, "SuperMonkey": 9999999.0, "Desperado": 9999999.0, "Mermonkey": 9999999.0,
+                    "BeastHandler": 9999999.0
+                };
+                applyEdit((obj) => { obj.towerXp = xpMap; });
+            }
+
+            function maxLevel() {
+                applyEdit((obj) => {
+                    obj.xp = 180000000.0;
+                    obj.rank = 155.0;
+                });
+            }
+
+            function unlockHero() {
+                const heroes = ["Quincy", "Gwendolin", "StrikerJones", "ObynGreenfoot", "DanDMonke", "Benjamin", "PatFusty", "CaptainChurchill", "Ezili", "Sauda", "Etienne", "Silas", "Rosalia", "Adora", "AdmiralBrickell", "Psi", "Geraldo", "Corvus"];
+                applyEdit((obj) => { obj.unlockedHeroes = heroes; });
+            }
+
+            function maxMoney() {
+                applyEdit((obj) => { obj.monkeyMoney = 99999999.0; });
+            }
+
+            function doubleCash() {
+                applyEdit((obj) => {
+                    if (!obj.purchase) obj.purchase = {};
+                    obj.purchase.purchasedDoubleCashMode = true;
+                });
+            }
+
+            function unlockKnowledge() {
+                const knowledge = ["IncreasedLifespan", "ExtraDartPops", "CrossbowReach", "CheapRangs", "FraggyFrags", "FastTackAttacks", "FastGlue", "HardTacks", "PoppyBlades", "ExtraBounce", "4And4", "ForceVsForce", "RecurringRangs", "HardPress", "MasterDoubleCross", "BudgetClusters", "MoreSplattyGlue", "IcyChill", "BigInferno", "AviationGradeGlue", "SoCold", "MegaMauler", "ComeOnEverybody", "LongTurbo", "BonusMonkey", "BionicAugmentation", "ViolentImpact", "CheaperSolution", "Hypothermia", "BigCryoBlast", "BonusGlueGunner", "MoreCash", "NavalUpgrades", "AirforceUpgrades", "EliteMilitaryTraining", "EmergencyUnlock", "CeramicShock", "GorgonStorm", "CheaperMaiming", "ExtraBurnyStuff", "RapidRazors", "AcceleratedAerodarts", "TargetedPineapples", "BigBunch", "BreakingBallistic", "FasterTakedowns", "CrossTheStreams", "PaintStripper", "MasterDefender", "GunCoolant", "ChargedChinooks", "BudgetBattery", "AeronauticSubsidy", "TradeAgreements", "QuadBurst", "Wingmonkey", "FlankingManeuvers", "SubAdmiral", "MilitaryConscription", "DoorGunner", "AdvancedLogistics", "BigBloonSabotage", "SuperRange", "LingeringMagic", "MagicTricks", "SpeedyBrewing", "MoMonkeyMoney", "StrongTonic", "AcidStability", "HotMagic", "FlameJet", "WarmOak", "ArcaneImpale", "ColdFront", "VineRupture", "ManaShield", "HeavyKnockback", "CheaperDoubles", "DiversionTactics", "StrikeDownTheFalse", "XrayUltra", "DeadlyTranquility", "ThereCanBeOnlyOne", "TinyTornadoes", "FlatPackBuildings", "OneMoreSpike", "FirstLastLineOfDefense", "MoreValuableBananas", "InsiderTrades", "MonkeyEducation", "ToArms", "VeryShreddy", "VigilantSentries", "ThickerFoams", "FarmSubsidy", "InlandRevenueStreams", "BiggerBanks", "BackroomDeals", "BetterSellDeals", "BigTraps", "HiValueMines", "VeteranMonkeyTraining", "GlobalAbilityCooldowns", "ParagonOfPower", "HealthyBananas", "BankDeposits", "HeroicReach", "HeroicVelocity", "MoreSplody", "AbilityDiscipline", "AbilityMastery", "Scholarships", "SelfTaughtHeroes", "QuickHands", "HeroFavors", "BigBloonBlueprints", "EmpoweredHeroes", "MonkeysTogetherStrong", "WeakPoint", "BiggerCamoTrap", "JustOneMore", "CheaperLakes", "BudgetPontoons", "LongerDartTime", "MaulingMoabMines", "LongerBoosts", "SupersizeGlueTrap", "PowerfulMonkeyStorm", "PreGamePrep", "FitFarmers", "AmbushTech", "SupaThrive", "BudgetCashDrops", "GrandPrixSpree"];
+                applyEdit((obj) => {
+                    obj.acquiredKnowledge = knowledge;
+                    obj.paidForKnowledge = knowledge;
+                });
+            }
+
+            function unlockSkin() {
+                const skins = ["Quincy", "Gwendolin", "StrikerJones", "ObynGreenfoot", "Cyber Quincy", "Wolfpack Quincy", "CircusGwendolin", "Scientist Gwendolin", "FirecrackerGwendolin", "Biker Bones", "Octo Jones", "MoltenObyn", "ObynOceanGuardian", "DanDMonke", "Benjamin", "BenJammin", "SushiBento", "PatFusty", "CaptainChurchill", "Ezili", "Sauda", "Etienne", "Silas", "Rosalia", "Adora", "AdmiralBrickell", "Psi", "Geraldo", "Corvus", "FustyTheSnowman", "KaijuPat", "Sleigh Captain Churchill", "Sentai Captain Churchill", "Galaxili", "SmudgeCatt", "ETnEtienne", "BookWyrmEtienne", "VikingSauda", "JiangshiSauda", "Voidora", "JoanOfArcAdora", "DreadPirateBrickell", "LifeguardBrickell", "Psimbals", "DreamstatePsi", "GeraldoGentlemanGadgeteer", "RosaliaTinkerfairy"];
+                applyEdit((obj) => { obj.unlockedTowerSkins = skins; });
+            }
+
+            function completeMaps() {
+                const mapNames = ["Tutorial", "InTheLoop", "SkullTweak", "ThreeMinesAround", "SpaPits", "Tinkerton", "TreeStump", "TownCentre", "MiddleOfTheRoad", "OneTwoTree", "Scrapyard", "TheCabin", "Resort", "Skates", "LotusIsland", "CandyFalls", "WinterPark", "Carved", "ParkPath", "AlpineRun", "FrozenOver", "Cubism", "FourCircles", "Hedge", "EndOfTheRoad", "Logs", "ProtectTheYacht", "Blons", "LostCrevasse", "LuminousCove", "AncientPortal", "SulfurSprings", "WaterPark", "Polyphemus", "CoveredGarden", "Quarry", "QuietStreet", "BloonariusPrime", "Balance", "Encrypted", "Bazaar", "AdorasTemple", "SpringSpring", "KartsNDarts", "MoonLanding", "Haunted", "Downstream", "FiringRange", "Cracked", "Streambed", "Chutes", "Rake", "SpiceIslands", "MushroomGrotto", "PartyParade", "SunsetGulch", "EnchantedGlade", "LastResort", "CastleRevenge", "DarkPath", "Erosion", "MidnightMansion", "SunkenColumns", "XFactor", "Mesa", "Geared", "Spillway", "Cargo", "PatsPond", "Peninsula", "HighFinance", "AnotherBrick", "OffTheCoast", "Cornfield", "Underground", "TrickyTracks", "GlacialTrail", "DarkDungeons", "Sanctuary", "Ravine", "FloodedValley", "#ouch", "Infernal", "BloodyPuddles", "Workshop", "Quad", "DarkCastle", "MuddyPuddles"];
+                applyEdit((obj) => {
+                    if (!obj.mapInfo) obj.mapInfo = {};
+                    if (!obj.mapInfo.maps) obj.mapInfo.maps = {};
+                    for (const name of mapNames) {
+                        obj.mapInfo.maps[name] = {
+                            seen: true,
+                            seenNew: true,
+                            seenNewDifficulty: false,
+                            completed: true,
+                            difficult: {
+                                Hard: { modes: { Standard: 1049862, AlternateBloonsRounds: 1049871, Sandbox: 1, MagicOnly: 1049871, DoubleMoabHealth: 1049871, SuperChimps: 1849867, HalfCash: 1049871, Impoppable: 1649871, Clicks: 1050183 }, coopModes: null },
+                                Medium: { modes: { Standard: 1049550, SuperChimps: 1049550, MilitaryOnly: 1049551, Reverse: 1049551, Sandbox: 1, Apopalypse: 1049551 }, coopModes: null },
+                                Easy: { modes: { Standard: 1049230, Sandbox: 1, PrimaryOnly: 1049231, SuperChimps: 1049230, Deflation: 1049231 }, coopModes: null }
+                            }
+                        };
+                    }
+                });
+            }
+
+            function maxVeteran() {
+                applyEdit((obj) => {
+                    obj.veteranXp = 19999980000000.0;
+                    obj.veteranRank = 1000000.0;
+                    obj.seenVeteranRankInfo = true;
+                });
+            }
+
+            function resetContent() {
+                if (!fileLoaded) return;
+                try {
+                    const orig = new TextDecoder('utf-8').decode(decryptedData);
+                    let content = orig;
+                    let start = 0;
+                    while (start < content.length && content.charCodeAt(start) === 0) start++;
+                    if (start > 0) content = content.substring(start);
+                    modifiedContent = content;
+                    jsonTextarea.value = content;
+                    try {
+                        const trimmed = content.trim();
+                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                            JSON.parse(trimmed);
+                            setValidation('Reset to original content (valid JSON)', false);
+                        } else {
+                            setValidation('Reset to original content (not JSON)', true);
+                        }
+                    } catch (e) {
+                        setValidation('Reset to original content', true);
+                    }
+                    hideAlerts();
+                    showSuccess('Content reset to original!');
+                } catch (e) {
+                    showError('Error resetting content: ' + e.message);
+                }
+            }
+
+            async function downloadEncrypted() {
+                if (!fileLoaded) return;
+                try {
+                    let jsonToEncrypt = modifiedContent.trim();
+                    if (!jsonToEncrypt.startsWith('{') && !jsonToEncrypt.startsWith('[')) {
+                        showError('Content is not valid JSON (must start with { or [)');
+                        return;
+                    }
+                    JSON.parse(jsonToEncrypt);
+                    const dataBytes = new TextEncoder().encode(jsonToEncrypt);
+                    const encrypted = await encryptFile(dataBytes, fileGuid, creationTime, lastWriteTime, salt);
+                    const base64 = btoa(String.fromCharCode(...encrypted));
+                    const byteChars = atob(base64);
+                    const byteNumbers = new Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) {
+                        byteNumbers[i] = byteChars.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName || 'save.save';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    hideAlerts();
+                    showSuccess('File downloaded successfully!');
+                } catch (e) {
+                    showError('Error encrypting: ' + e.message);
+                }
+            }
+
+            async function handleFile(file) {
+                try {
+                    hideAlerts();
+
+                    if (!file) {
+                        showError('No file selected');
+                        return;
+                    }
+
+                    fileLoaded = false;
+                    const buffer = await file.arrayBuffer();
+                    const fileBytes = new Uint8Array(buffer);
+
+                    if (fileBytes.length === 0) {
+                        showError('File is empty');
+                        return;
+                    }
+
+                    originalEncryptedData = fileBytes;
+                    fileName = file.name;
+
+                    const result = await decryptFileWithHeader(fileBytes);
+                    decryptedData = result.data;
+                    fileGuid = result.guid;
+                    creationTime = result.creationTime;
+                    lastWriteTime = result.lastWriteTime;
+                    salt = result.salt;
+
+                    let content = new TextDecoder('utf-8').decode(decryptedData);
+                    let start = 0;
+                    while (start < content.length && content.charCodeAt(start) === 0) start++;
+                    if (start > 0) content = content.substring(start);
+
+                    modifiedContent = content;
+                    jsonTextarea.value = content;
+                    try {
+                        const trimmed = content.trim();
+                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                            JSON.parse(trimmed);
+                            setValidation('Valid JSON', false);
+                        } else {
+                            setValidation('Content is not JSON', true);
+                        }
+                    } catch (e) {
+                        setValidation('Invalid JSON: ' + e.message, true);
+                    }
+
+                    fileLoaded = true;
+                    fileInfo.style.display = 'flex';
+                    fileNameDisplay.textContent = fileName;
+
+                    jsonEditor.classList.add('visible');
+
+                    downloadBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    menuItems.forEach(btn => btn.disabled = false);
+
+                    showSuccess('File decrypted successfully! Edit the JSON, then click "Download File" to get the file.');
+                } catch (e) {
+                    showError('Error processing file: ' + e.message);
+                    console.error(e);
+                }
+            }
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            document.querySelector('.btn-upload').addEventListener('click', (e) => {
+                if (e.target.tagName !== 'LABEL') {
+                    fileInput.click();
+                }
+            });
+
+            downloadBtn.addEventListener('click', downloadEncrypted);
+            resetBtn.addEventListener('click', resetContent);
+
+            closeError.addEventListener('click', () => { errorAlert.style.display = 'none'; });
+            closeSuccess.addEventListener('click', () => { successAlert.style.display = 'none'; });
+
+            jsonTextarea.addEventListener('input', () => {
+                modifiedContent = jsonTextarea.value;
+                try {
+                    const trimmed = modifiedContent.trim();
+                    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                        JSON.parse(trimmed);
+                        setValidation('Valid JSON', false);
+                    } else {
+                        setValidation('JSON must start with { or [', true);
+                    }
+                } catch (e) {
+                    setValidation(e.message, true);
+                }
+            });
+
+            document.querySelectorAll('.menu-item[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!fileLoaded) {
+                        showError('Please upload a save file first!');
+                        return;
+                    }
+                    const action = btn.dataset.action;
+                    switch (action) {
+                        case 'unlockTowers': unlockTowers(); break;
+                        case 'unlockXP': unlockXP(); break;
+                        case 'maxLevel': maxLevel(); break;
+                        case 'unlockHero': unlockHero(); break;
+                        case 'maxMoney': maxMoney(); break;
+                        case 'doubleCash': doubleCash(); break;
+                        case 'unlockKnowledge': unlockKnowledge(); break;
+                        case 'unlockSkin': unlockSkin(); break;
+                        case 'completeMaps': completeMaps(); break;
+                        case 'maxVeteran': maxVeteran(); break;
+                    }
+                });
+            });
+
+            downloadBtn.disabled = true;
+            resetBtn.disabled = true;
+            menuItems.forEach(btn => btn.disabled = true);
+
+        })();
+    </script>
+</body>
+</html>
