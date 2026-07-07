@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,6 +17,7 @@
             padding: 24px 16px;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
             min-height: 100vh;
             color: #d4c5a0;
         }
@@ -340,13 +341,23 @@
         }
 
         .json-editor {
-            background: linear-gradient(145deg, rgba(42, 26, 10, 0.8), rgba(74, 46, 18, 0.6));
-            border-radius: 16px;
-            border: 1px solid rgba(255, 215, 0, 0.06);
+            display: none;
+            height: 0;
+            margin: 0;
+            padding: 0;
+            border: none;
             overflow: hidden;
-            margin-bottom: 24px;
-          
         }
+
+            .json-editor.visible {
+                display: block;
+                height: auto;
+                margin-bottom: 24px;
+                border: 1px solid rgba(255, 215, 0, 0.06);
+                background: linear-gradient(145deg, rgba(42, 26, 10, 0.8), rgba(74, 46, 18, 0.6));
+                border-radius: 16px;
+                overflow: hidden;
+            }
 
         .editor-header {
             display: flex;
@@ -369,24 +380,57 @@
             padding: 16px 20px;
         }
 
-        .json-textarea {
-            width: 100%;
-            padding: 16px;
+        .editor-code-wrap {
+            display: flex;
+            align-items: stretch;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 215, 0, 0.08);
             border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+            .editor-code-wrap:focus-within {
+                border-color: rgba(255, 215, 0, 0.3);
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.05);
+            }
+
+        .line-numbers {
+            flex: 0 0 auto;
+            padding: 16px 10px 16px 14px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255, 215, 0, 0.08);
+            color: #7a6440;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: right;
+            white-space: pre;
+            overflow: hidden;
+            user-select: none;
+        }
+
+            .line-numbers .line-error {
+                color: #ff6b35;
+                font-weight: 700;
+            }
+
+        .json-textarea {
+            flex: 1 1 auto;
+            width: 100%;
+            padding: 16px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
             color: #d4c5a0;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 13px;
             line-height: 1.6;
             resize: vertical;
-            transition: border-color 0.3s ease;
         }
 
             .json-textarea:focus {
                 outline: none;
-                border-color: rgba(255, 215, 0, 0.3);
-                box-shadow: 0 0 30px rgba(255, 215, 0, 0.05);
             }
 
         .editor-status {
@@ -570,7 +614,10 @@
                 <h4>📝 Edit JSON</h4>
             </div>
             <div class="editor-body">
-                <textarea id="jsonTextarea" class="json-textarea" rows="20" spellcheck="false"></textarea>
+                <div class="editor-code-wrap">
+                    <div id="lineNumbers" class="line-numbers">1</div>
+                    <textarea id="jsonTextarea" class="json-textarea" rows="20" spellcheck="false"></textarea>
+                </div>
                 <div class="editor-status">
                     <span id="validationStatus" class="status-idle">💡 Edit the JSON above to modify your save file</span>
                 </div>
@@ -608,6 +655,7 @@
             const fileNameDisplay = document.getElementById('fileNameDisplay');
             const jsonEditor = document.getElementById('jsonEditor');
             const jsonTextarea = document.getElementById('jsonTextarea');
+            const lineNumbersEl = document.getElementById('lineNumbers');
             const validationStatus = document.getElementById('validationStatus');
             const errorAlert = document.getElementById('errorAlert');
             const errorMessage = document.getElementById('errorMessage');
@@ -635,6 +683,33 @@
                 validationStatus.textContent = text;
                 validationStatus.className = isError ? 'status-error' : 'status-success';
             }
+
+            function updateLineNumbers(errorLine) {
+                const totalLines = jsonTextarea.value.split('\n').length;
+                let html = '';
+                for (let i = 1; i <= totalLines; i++) {
+                    html += (i === errorLine) ? '<span class="line-error">' + i + '</span>\n' : i + '\n';
+                }
+                lineNumbersEl.innerHTML = html;
+                lineNumbersEl.scrollTop = jsonTextarea.scrollTop;
+            }
+
+            function getErrorLine(text, message) {
+                const match = message && message.match(/position (\d+)/);
+                if (!match) return null;
+                const pos = parseInt(match[1], 10);
+                return text.slice(0, pos).split('\n').length;
+            }
+
+            function reportJsonError(message, text) {
+                const line = getErrorLine(text, message);
+                setValidation(line ? ('Line ' + line + ': ' + message) : message, true);
+                updateLineNumbers(line);
+            }
+
+            jsonTextarea.addEventListener('scroll', () => {
+                lineNumbersEl.scrollTop = jsonTextarea.scrollTop;
+            });
 
             function adler32(data) {
                 let a = 1, b = 0;
@@ -791,10 +866,11 @@
             }
 
             function applyEdit(callback) {
+                const trimmed = modifiedContent.trim();
                 try {
-                    const trimmed = modifiedContent.trim();
                     if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
                         showError('Content is not valid JSON (must start with { or [)');
+                        reportJsonError('Content is not valid JSON (must start with { or [)', trimmed);
                         return false;
                     }
                     let jsonObj = JSON.parse(trimmed);
@@ -802,11 +878,13 @@
                     modifiedContent = JSON.stringify(jsonObj, null, 2);
                     jsonTextarea.value = modifiedContent;
                     setValidation('Valid JSON', false);
+                    updateLineNumbers();
                     hideAlerts();
                     showSuccess('Edit applied successfully!');
                     return true;
                 } catch (e) {
                     showError('JSON error: ' + e.message);
+                    reportJsonError(e.message, trimmed);
                     return false;
                 }
             }
@@ -916,11 +994,12 @@
                         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
                             JSON.parse(trimmed);
                             setValidation('Reset to original content (valid JSON)', false);
+                            updateLineNumbers();
                         } else {
-                            setValidation('Reset to original content (not JSON)', true);
+                            reportJsonError('Reset to original content (not JSON)', trimmed);
                         }
                     } catch (e) {
-                        setValidation('Reset to original content', true);
+                        reportJsonError('Reset to original content: ' + e.message, content.trim());
                     }
                     hideAlerts();
                     showSuccess('Content reset to original!');
@@ -935,9 +1014,16 @@
                     let jsonToEncrypt = modifiedContent.trim();
                     if (!jsonToEncrypt.startsWith('{') && !jsonToEncrypt.startsWith('[')) {
                         showError('Content is not valid JSON (must start with { or [)');
+                        reportJsonError('Content is not valid JSON (must start with { or [)', jsonToEncrypt);
                         return;
                     }
-                    JSON.parse(jsonToEncrypt);
+                    try {
+                        JSON.parse(jsonToEncrypt);
+                    } catch (parseErr) {
+                        showError('Error encrypting: ' + parseErr.message);
+                        reportJsonError(parseErr.message, jsonToEncrypt);
+                        return;
+                    }
                     const dataBytes = new TextEncoder().encode(jsonToEncrypt);
                     const encrypted = await encryptFile(dataBytes, fileGuid, creationTime, lastWriteTime, salt);
                     const base64 = btoa(String.fromCharCode(...encrypted));
@@ -1001,13 +1087,17 @@
                     try {
                         const trimmed = content.trim();
                         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-                            JSON.parse(trimmed);
+                            const parsed = JSON.parse(trimmed);
+                            const pretty = JSON.stringify(parsed, null, 2);
+                            modifiedContent = pretty;
+                            jsonTextarea.value = pretty;
                             setValidation('Valid JSON', false);
+                            updateLineNumbers();
                         } else {
-                            setValidation('Content is not JSON', true);
+                            reportJsonError('Content is not JSON', trimmed);
                         }
                     } catch (e) {
-                        setValidation('Invalid JSON: ' + e.message, true);
+                        reportJsonError('Invalid JSON: ' + e.message, content.trim());
                     }
 
                     fileLoaded = true;
@@ -1048,16 +1138,17 @@
 
             jsonTextarea.addEventListener('input', () => {
                 modifiedContent = jsonTextarea.value;
+                const trimmed = modifiedContent.trim();
                 try {
-                    const trimmed = modifiedContent.trim();
                     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
                         JSON.parse(trimmed);
                         setValidation('Valid JSON', false);
+                        updateLineNumbers();
                     } else {
-                        setValidation('JSON must start with { or [', true);
+                        reportJsonError('JSON must start with { or [', trimmed);
                     }
                 } catch (e) {
-                    setValidation(e.message, true);
+                    reportJsonError(e.message, trimmed);
                 }
             });
 
